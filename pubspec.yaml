@@ -1,11 +1,11 @@
 name: animated_options_bar
 description: A reusable animated tabbar/scrollbar component with smooth selection animations for Flutter.
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/evilHazzarD/animated_options_bar
 repository: https://github.com/evilHazzarD/animated_options_bar
 
 environment:
-  sdk: ^3.9.2
+  sdk: ">=2.17.0"
   flutter: ">=1.17.0"
 
 dependencies:

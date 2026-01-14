@@ -51,6 +51,7 @@ final config = OptionsBarConfig(
   inactiveTextColor: Colors.white,
   selectionColor: Colors.orange,
   animationDuration: Duration(milliseconds: 300),
+  centerOptions: true,
 );
 
 AnimatedOptionsBar<String>(
@@ -141,6 +142,7 @@ final customConfig = OptionsBarConfig(
   backgroundColor: Colors.grey[100], // Optional background color
   arrowInset: 4.0, // Optional: distance of scroll arrows from edges
   arrowButtonSize: 20.0, // Optional: size of scroll arrow buttons
+  centerOptions: true, // Optional: center options in the bar
 );
 ```
 
@@ -158,20 +160,6 @@ final customConfig = OptionsBarConfig(
 - `getId`: Function to extract ID from an item (required for non-String types, auto-detected for String)
 - `getLabel`: Function to extract label from an item (required for non-String types, auto-detected for String)
 
-## Key Improvements
-
-### Simplified API
-
-The widget has been refactored to remove unnecessary parameters:
-
-- ❌ Removed `previousId` - now tracked internally
-- ❌ Removed `isTabBar` - automatic detection
-- ❌ Removed `availableWidth` - automatic detection
-- ❌ Removed `skipInitialAnimation` - handled automatically
-- ❌ Removed `textColorChangeDelay` - uses sensible default internally
-- ✅ Auto-detection for String items (getId/getLabel optional)
-- ✅ Automatic layout mode detection
-
 ### Production Ready
 
 - ✅ StatefulWidget with proper state management
@@ -185,21 +173,6 @@ The widget has been refactored to remove unnecessary parameters:
 
 See `example/main.dart` for a complete example screen demonstrating both layout modes and different configurations.
 
-## Testing
-
-Run tests with:
-
-```bash
-flutter test
-```
-
-The test suite includes:
-- Configuration tests
-- String and custom item type tests
-- Layout mode auto-detection tests
-- Animation behavior tests
-- Edge case handling tests
-- Accessibility tests
 
 ## License
 

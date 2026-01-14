@@ -93,6 +93,13 @@ class OptionsBarConfig {
   /// Default is 20.0 pixels.
   double arrowButtonSize;
 
+  /// Whether to center the options items within the bar
+  ///
+  /// When true, items will be centered using MainAxisAlignment.center.
+  /// When false (default), items will be aligned to the start.
+  /// This is particularly useful in tabbar mode when items don't fill the entire width.
+  bool centerOptions;
+
   OptionsBarConfig({
     required this.textPadding,
     required this.borderRadius,
@@ -107,6 +114,7 @@ class OptionsBarConfig {
     this.arrowInset = 4.0,
     this.arrowButtonSize = 20.0,
     this.arrowBackgroundAlpha = 0.1,
+    this.centerOptions = false,
   });
 }
 
@@ -190,12 +198,11 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
 
     // Granular cache invalidation - only invalidate when properties that affect
     // text measurement change
-    final itemsChanged =
-        oldWidget.items.length != widget.items.length ||
+    final itemsChanged = oldWidget.items.length != widget.items.length ||
         !identical(oldWidget.items, widget.items);
     final textMeasurementChanged =
         oldWidget.config.textStyle != widget.config.textStyle ||
-        oldWidget.config.textPadding != widget.config.textPadding;
+            oldWidget.config.textPadding != widget.config.textPadding;
     final getIdChanged = oldWidget.getId != widget.getId;
     final getLabelChanged = oldWidget.getLabel != widget.getLabel;
 
@@ -282,8 +289,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
       return _cachedItemSizes!;
     }
 
-    final textStyle =
-        widget.config.textStyle ??
+    final textStyle = widget.config.textStyle ??
         TextStyle(fontSize: MediaQuery.textScalerOf(context).scale(14));
 
     final textDirection = Directionality.of(context);
@@ -335,9 +341,8 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
     if (currentIndex < 0) {
       // Invalid selectedId - provide better error handling
       assert(() {
-        final availableIds = widget.items
-            .map((item) => _getId(item))
-            .join(", ");
+        final availableIds =
+            widget.items.map((item) => _getId(item)).join(", ");
         debugPrint(
           'AnimatedOptionsBar: selectedId "${widget.selectedId}" not found in items. '
           'Available IDs: $availableIds',
@@ -367,8 +372,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
         final isTabBar = totalWidth <= constraints.maxWidth;
 
         // Find previous index
-        final previousIndex =
-            _previousSelectedId != null &&
+        final previousIndex = _previousSelectedId != null &&
                 _previousSelectedId != widget.selectedId &&
                 widget.items.any((item) => _getId(item) == _previousSelectedId)
             ? widget.items.indexWhere(
@@ -381,7 +385,8 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
         double currentWidth, previousWidth;
         double itemWidth = 0;
 
-        if (isTabBar) {
+        if (isTabBar && !widget.config.centerOptions) {
+          // Traditional tabbar mode: items expand to fill width
           final availableWidth =
               constraints.maxWidth - (widget.config.scrollEdgePadding * 2);
           itemWidth = availableWidth / widget.items.length;
@@ -402,6 +407,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
               ? itemSizes[previousIndex]!.width
               : currentWidth;
         } else {
+          // Scrollbar mode OR tabbar mode with centering: items use natural width
           double calculatePosition(int index) {
             // Start from 0 since we removed edge padding (handled by arrows now)
             double pos = 0.0;
@@ -411,10 +417,28 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
             return pos;
           }
 
-          currentPosition = calculatePosition(currentIndex);
-          previousPosition = previousIndex >= 0
+          // Calculate base position (cumulative width)
+          final baseCurrentPosition = calculatePosition(currentIndex);
+          final basePreviousPosition = previousIndex >= 0
               ? calculatePosition(previousIndex)
-              : currentPosition;
+              : baseCurrentPosition;
+
+          // If in tabbar mode with centering, add offset for centered group
+          if (isTabBar && widget.config.centerOptions) {
+            // Calculate total width of all items with spacing
+            final totalContentWidth = _calculateTotalWidth(itemSizes) -
+                (widget.config.scrollEdgePadding * 2);
+            final availableWidth = constraints.maxWidth;
+            final centerOffset = (availableWidth - totalContentWidth) / 2;
+
+            currentPosition = baseCurrentPosition + centerOffset;
+            previousPosition = basePreviousPosition + centerOffset;
+          } else {
+            // Scrollbar mode: no offset needed
+            currentPosition = baseCurrentPosition;
+            previousPosition = basePreviousPosition;
+          }
+
           currentWidth = itemSizes[currentIndex]!.width;
           previousWidth = previousIndex >= 0
               ? itemSizes[previousIndex]!.width
@@ -422,8 +446,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
         }
 
         // Determine if we should animate
-        final shouldAnimate =
-            !_isFirstBuild &&
+        final shouldAnimate = !_isFirstBuild &&
             previousIndex >= 0 &&
             previousIndex != currentIndex;
 
@@ -458,8 +481,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted && _scrollController?.hasClients == true) {
                 // Calculate actual viewport width (excluding arrow buttons)
-                final arrowButtonWidth =
-                    widget.config.arrowInset * 2 +
+                final arrowButtonWidth = widget.config.arrowInset * 2 +
                     widget.config.arrowButtonSize; // Total width per arrow
                 final actualViewportWidth =
                     constraints.maxWidth - (arrowButtonWidth * 2);
@@ -501,9 +523,8 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
           // Show scroll arrows when scrolling is available
           // Use Row layout: [Left Arrow] [Scrollable Content] [Right Arrow]
           // Ensure height honors the minimum container height if items are smaller
-          final contentHeight = itemSizes.isNotEmpty
-              ? itemSizes[0]!.height
-              : _fallbackHeight;
+          final contentHeight =
+              itemSizes.isNotEmpty ? itemSizes[0]!.height : _fallbackHeight;
           final containerHeight = contentHeight < _minimumContainerHeight
               ? _minimumContainerHeight
               : contentHeight;
@@ -570,8 +591,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
     required double previousWidth,
     required bool shouldAnimate,
   }) {
-    final textStyle =
-        widget.config.textStyle ??
+    final textStyle = widget.config.textStyle ??
         TextStyle(fontSize: MediaQuery.textScalerOf(context).scale(14));
 
     final stack = Stack(
@@ -583,9 +603,8 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
             key: ValueKey(
               '${isTabBar ? 'tabbar' : 'scrollbar'}-${widget.selectedId}',
             ),
-            duration: shouldAnimate
-                ? widget.config.animationDuration
-                : Duration.zero,
+            duration:
+                shouldAnimate ? widget.config.animationDuration : Duration.zero,
             tween: Tween(begin: 0.0, end: 1.0),
             curve: Curves.easeInOut,
             builder: (context, t, child) {
@@ -617,11 +636,18 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
         // Text row with items
         Padding(
           padding: EdgeInsets.only(
-            left: isTabBar ? widget.config.scrollEdgePadding : 0,
-            right: isTabBar ? widget.config.scrollEdgePadding : 0,
+            left: isTabBar && !widget.config.centerOptions
+                ? widget.config.scrollEdgePadding
+                : 0,
+            right: isTabBar && !widget.config.centerOptions
+                ? widget.config.scrollEdgePadding
+                : 0,
           ),
           child: Row(
             mainAxisSize: isTabBar ? MainAxisSize.max : MainAxisSize.min,
+            mainAxisAlignment: widget.config.centerOptions
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
             children: widget.items.asMap().entries.map((entry) {
               final index = entry.key;
               final item = entry.value;
@@ -637,7 +663,9 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
                 child: GestureDetector(
                   onTap: () => widget.onItemSelected(itemId),
                   child: SizedBox(
-                    width: isTabBar ? null : itemSizes[index]!.width,
+                    width: isTabBar && !widget.config.centerOptions
+                        ? null
+                        : itemSizes[index]!.width,
                     height: itemSizes[index]!.height,
                     child: Center(
                       child: _AnimatedText(
@@ -653,9 +681,11 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
                 ),
               );
 
-              if (isTabBar) {
+              if (isTabBar && !widget.config.centerOptions) {
+                // In tabbar mode without centering, expand items to fill width
                 return Expanded(child: itemWidget);
               } else {
+                // In scrollbar mode OR tabbar mode with centering, use natural width with spacing
                 final isLast = index == widget.items.length - 1;
                 return Padding(
                   padding: EdgeInsets.only(
@@ -785,9 +815,8 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
         child: Padding(
           padding: EdgeInsets.only(
             left: widget.direction == _ScrollDirection.left ? widget.inset : 0,
-            right: widget.direction == _ScrollDirection.right
-                ? widget.inset
-                : 0,
+            right:
+                widget.direction == _ScrollDirection.right ? widget.inset : 0,
           ),
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
@@ -849,9 +878,8 @@ class _AnimatedText extends StatelessWidget {
       tween: Tween(begin: 0.0, end: isActive ? 1.0 : 0.0),
       curve: Curves.easeInOut,
       builder: (context, textValue, child) {
-        final shouldChangeColor = skipAnimation
-            ? isActive
-            : textValue >= _textColorChangeDelay;
+        final shouldChangeColor =
+            skipAnimation ? isActive : textValue >= _textColorChangeDelay;
         final textColor = shouldChangeColor
             ? (isActive ? config.activeTextColor : config.inactiveTextColor)
             : config.inactiveTextColor;

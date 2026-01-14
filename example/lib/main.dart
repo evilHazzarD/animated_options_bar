@@ -20,6 +20,7 @@ final _lvl0Config = OptionsBarConfig(
   selectionColor: _orangeColor,
   animationDuration: Duration(milliseconds: 300),
   arrowInset: 4.0, // 4px from screen edge (parent has no horizontal padding)
+  centerOptions: true, // Center items in the bar
 );
 
 // Level 1 configuration (rounded rectangle, white text when selected)
@@ -33,6 +34,7 @@ final _lvl1Config = OptionsBarConfig(
   selectionColor: _orangeColor,
   animationDuration: Duration(milliseconds: 300),
   arrowInset: 4.0, // Positioned from widget edge
+  centerOptions: false, // Keep default alignment
 );
 
 void main() {
@@ -230,12 +232,10 @@ class _SetConfiguratorExampleScreenState
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.remove_circle, size: 20),
-                        color: _optionsLvl1.length <= 1
-                            ? _greyColor
-                            : _redColor,
-                        onPressed: _optionsLvl1.length <= 1
-                            ? null
-                            : _removeLvl1Item,
+                        color:
+                            _optionsLvl1.length <= 1 ? _greyColor : _redColor,
+                        onPressed:
+                            _optionsLvl1.length <= 1 ? null : _removeLvl1Item,
                         tooltip: 'Remove item from Level 1',
                       ),
                       IconButton(
@@ -258,12 +258,10 @@ class _SetConfiguratorExampleScreenState
                       const SizedBox(width: 8),
                       IconButton(
                         icon: const Icon(Icons.remove_circle, size: 20),
-                        color: _optionsLvl0.length <= 1
-                            ? _greyColor
-                            : _redColor,
-                        onPressed: _optionsLvl0.length <= 1
-                            ? null
-                            : _removeLvl0Item,
+                        color:
+                            _optionsLvl0.length <= 1 ? _greyColor : _redColor,
+                        onPressed:
+                            _optionsLvl0.length <= 1 ? null : _removeLvl0Item,
                         tooltip: 'Remove item from Level 0',
                       ),
                       IconButton(
