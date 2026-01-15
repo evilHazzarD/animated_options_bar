@@ -1,7 +1,7 @@
 name: animated_options_bar_example
 description: Example app for animated_options_bar package
 publish_to: 'none'
-version: 0.1.1
+version: 0.1.2
 
 environment:
   sdk: ">=2.17.0"

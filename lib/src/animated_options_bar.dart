@@ -64,6 +64,9 @@ class OptionsBarConfig {
   /// Text color when item is inactive
   Color inactiveTextColor;
 
+  /// Text color when item is disabled
+  Color disabledTextColor;
+
   /// Background alpha of the scroll arrow buttons
   double arrowBackgroundAlpha;
 
@@ -108,6 +111,7 @@ class OptionsBarConfig {
     required this.activeTextColor,
     required this.inactiveTextColor,
     required this.selectionColor,
+    Color? disabledTextColor,
     this.backgroundColor,
     this.animationDuration = const Duration(milliseconds: 300),
     this.textStyle,
@@ -115,7 +119,8 @@ class OptionsBarConfig {
     this.arrowButtonSize = 20.0,
     this.arrowBackgroundAlpha = 0.1,
     this.centerOptions = false,
-  });
+  }) : disabledTextColor =
+            disabledTextColor ?? inactiveTextColor.withValues(alpha: 0.5);
 }
 
 class AnimatedOptionsBar<T> extends StatefulWidget {
@@ -140,6 +145,11 @@ class AnimatedOptionsBar<T> extends StatefulWidget {
   /// Required for other types.
   final String Function(T)? getLabel;
 
+  /// Function to check if an item is enabled
+  ///
+  /// If null, all items are considered enabled.
+  final bool Function(T)? isItemEnabled;
+
   /// Configuration for styling
   final OptionsBarConfig config;
 
@@ -150,6 +160,7 @@ class AnimatedOptionsBar<T> extends StatefulWidget {
     required this.onItemSelected,
     this.getId,
     this.getLabel,
+    this.isItemEnabled,
     required this.config,
   });
 
@@ -209,7 +220,8 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
     if (itemsChanged ||
         textMeasurementChanged ||
         getIdChanged ||
-        getLabelChanged) {
+        getLabelChanged ||
+        oldWidget.isItemEnabled != widget.isItemEnabled) {
       _cachedItemSizes = null;
       _itemIdCache = null;
       _itemLabelCache = null;
@@ -655,13 +667,15 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
               final itemId = _getId(item);
               final itemLabel = _getLabel(item);
               final isActive = itemId == widget.selectedId;
+              final isEnabled = widget.isItemEnabled?.call(item) ?? true;
 
               Widget itemWidget = Semantics(
                 label: itemLabel,
                 selected: isActive,
+                enabled: isEnabled,
                 button: true,
                 child: GestureDetector(
-                  onTap: () => widget.onItemSelected(itemId),
+                  onTap: isEnabled ? () => widget.onItemSelected(itemId) : null,
                   child: SizedBox(
                     width: isTabBar && !widget.config.centerOptions
                         ? null
@@ -671,6 +685,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
                       child: _AnimatedText(
                         text: itemLabel,
                         isActive: isActive,
+                        isEnabled: isEnabled,
                         config: widget.config,
                         textStyle: textStyle,
                         animationDuration: widget.config.animationDuration,
@@ -852,6 +867,7 @@ class _ScrollArrowButtonState extends State<_ScrollArrowButton> {
 class _AnimatedText extends StatelessWidget {
   final String text;
   final bool isActive;
+  final bool isEnabled;
   final OptionsBarConfig config;
   final TextStyle textStyle;
   final Duration animationDuration;
@@ -863,6 +879,7 @@ class _AnimatedText extends StatelessWidget {
   const _AnimatedText({
     required this.text,
     required this.isActive,
+    required this.isEnabled,
     required this.config,
     required this.textStyle,
     required this.animationDuration,
@@ -880,9 +897,15 @@ class _AnimatedText extends StatelessWidget {
       builder: (context, textValue, child) {
         final shouldChangeColor =
             skipAnimation ? isActive : textValue >= _textColorChangeDelay;
-        final textColor = shouldChangeColor
-            ? (isActive ? config.activeTextColor : config.inactiveTextColor)
-            : config.inactiveTextColor;
+
+        Color textColor;
+        if (!isEnabled) {
+          textColor = config.disabledTextColor;
+        } else {
+          textColor = shouldChangeColor
+              ? (isActive ? config.activeTextColor : config.inactiveTextColor)
+              : config.inactiveTextColor;
+        }
 
         return Text(text, style: textStyle.copyWith(color: textColor));
       },

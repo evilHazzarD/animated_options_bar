@@ -17,6 +17,7 @@ final _lvl0Config = OptionsBarConfig(
   scrollEdgePadding: 16.0,
   activeTextColor: _blackColor,
   inactiveTextColor: _whiteColor,
+  disabledTextColor: _whiteColor.withValues(alpha: 0.38),
   selectionColor: _orangeColor,
   animationDuration: Duration(milliseconds: 300),
   arrowInset: 4.0, // 4px from screen edge (parent has no horizontal padding)
@@ -31,6 +32,7 @@ final _lvl1Config = OptionsBarConfig(
   scrollEdgePadding: 8.0,
   activeTextColor: _whiteColor,
   inactiveTextColor: _blackColor,
+  disabledTextColor: _blackColor.withValues(alpha: 0.38),
   selectionColor: _orangeColor,
   animationDuration: Duration(milliseconds: 300),
   arrowInset: 4.0, // Positioned from widget edge
@@ -65,6 +67,18 @@ class ExampleItem {
     required this.label,
     this.enabled = true,
   });
+
+  ExampleItem copyWith({
+    String? id,
+    String? label,
+    bool? enabled,
+  }) {
+    return ExampleItem(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      enabled: enabled ?? this.enabled,
+    );
+  }
 }
 
 /// Example screen similar to SetConfiguratorScreen
@@ -82,7 +96,7 @@ class _SetConfiguratorExampleScreenState
   final List<ExampleItem> _optionsLvl0 = [
     ExampleItem(id: 'Option1', label: 'Option1'),
     ExampleItem(id: 'Option2', label: 'Option2'),
-    ExampleItem(id: 'Option3', label: 'Option3'),
+    ExampleItem(id: 'Option3', label: 'Option3', enabled: false),
   ];
 
   // Level 1 items (above level 0): Configuration options
@@ -90,7 +104,7 @@ class _SetConfiguratorExampleScreenState
     ExampleItem(id: 'Option1', label: 'Option1'),
     ExampleItem(id: 'Option2', label: 'Option 2 Long Title'),
     ExampleItem(id: 'Option3', label: 'Option3'),
-    ExampleItem(id: 'Option4', label: 'Option 4 Long Title'),
+    ExampleItem(id: 'Option4', label: 'Option 4 Long Title', enabled: false),
     ExampleItem(id: 'Option5', label: 'Option5'),
     ExampleItem(id: 'Option6', label: 'Option 6 Long Title'),
     ExampleItem(id: 'Option7', label: 'Option7'),
@@ -153,15 +167,30 @@ class _SetConfiguratorExampleScreenState
       final removedItem = _optionsLvl1.removeLast();
       // If removed item was selected, select first item
       if (removedItem.id == _selectedLvl1 && _optionsLvl1.isNotEmpty) {
-        _selectedLvl1 = _optionsLvl1.first.id;
+        _selectedLvl0 = _optionsLvl1.first.id;
       }
+    });
+  }
+
+  void _toggleLastLvl0Enabled() {
+    if (_optionsLvl0.isEmpty) return;
+    setState(() {
+      final last = _optionsLvl0.last;
+      _optionsLvl0.last = last.copyWith(enabled: !last.enabled);
+    });
+  }
+
+  void _toggleLastLvl1Enabled() {
+    if (_optionsLvl1.isEmpty) return;
+    setState(() {
+      final last = _optionsLvl1.last;
+      _optionsLvl1.last = last.copyWith(enabled: !last.enabled);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final enabledLvl0 = _optionsLvl0.where((item) => item.enabled).toList();
-    final enabledLvl1 = _optionsLvl1.where((item) => item.enabled).toList();
+    // Use full lists, filtering is handled by the widget
 
     return Scaffold(
       backgroundColor: _whiteColor,
@@ -244,6 +273,14 @@ class _SetConfiguratorExampleScreenState
                         onPressed: _addLvl1Item,
                         tooltip: 'Add item to Level 1',
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.do_not_disturb_on, size: 20),
+                        color: _blackColor,
+                        onPressed: _optionsLvl1.isEmpty
+                            ? null
+                            : _toggleLastLvl1Enabled,
+                        tooltip: 'Toggle last item enabled',
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -269,6 +306,14 @@ class _SetConfiguratorExampleScreenState
                         color: _greenColor,
                         onPressed: _addLvl0Item,
                         tooltip: 'Add item to Level 0',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.do_not_disturb_on, size: 20),
+                        color: _blackColor,
+                        onPressed: _optionsLvl0.isEmpty
+                            ? null
+                            : _toggleLastLvl0Enabled,
+                        tooltip: 'Toggle last item enabled',
                       ),
                     ],
                   ),
@@ -296,11 +341,12 @@ class _SetConfiguratorExampleScreenState
               color: _greyColor[100],
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: AnimatedOptionsBar<ExampleItem>(
-                items: enabledLvl1,
+                items: _optionsLvl1,
                 selectedId: _selectedLvl1,
                 onItemSelected: _selectLvl1,
                 getId: (item) => item.id,
                 getLabel: (item) => item.label,
+                isItemEnabled: (item) => item.enabled,
                 config: _lvl1Config,
               ),
             ),
@@ -324,11 +370,12 @@ class _SetConfiguratorExampleScreenState
               color: _blackColor,
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: AnimatedOptionsBar<ExampleItem>(
-                items: enabledLvl0,
+                items: _optionsLvl0,
                 selectedId: _selectedLvl0,
                 onItemSelected: _selectLvl0,
                 getId: (item) => item.id,
                 getLabel: (item) => item.label,
+                isItemEnabled: (item) => item.enabled,
                 config: _lvl0Config,
               ),
             ),

@@ -11,6 +11,7 @@ A production-ready Flutter package for animated tabbar/scrollbar components with
 - 🎨 Configurable styling through `OptionsBarConfig`
 - 🔧 Generic implementation works with any item type
 - 📱 String items supported with auto-detection (no getId/getLabel needed)
+- 🚫 Support for disabled items with visual feedback
 - ♿ Built-in accessibility support
 - 🚀 Production-ready with comprehensive error handling
 
@@ -21,8 +22,6 @@ Add this package to your `pubspec.yaml`:
 ```yaml
 dependencies:
   animated_options_bar:
-    git:
-      url: https://github.com/evilHazzarD/animated_options_bar.git
 ```
 
 Or if using a local path:
@@ -58,6 +57,8 @@ AnimatedOptionsBar<String>(
   items: ['Option 1', 'Option 2', 'Option 3'],
   selectedId: 'Option 1',
   onItemSelected: (id) => setState(() => selectedId = id),
+  // Optional: Disable specific items
+  isItemEnabled: (id) => id != 'Option 3',
   config: config,
 )
 ```
@@ -136,6 +137,7 @@ final customConfig = OptionsBarConfig(
   scrollEdgePadding: 16.0,
   activeTextColor: Colors.blue,
   inactiveTextColor: Colors.grey,
+  disabledTextColor: Colors.grey.withOpacity(0.5), // Optional: Color for disabled items
   selectionColor: Colors.blue,
   animationDuration: Duration(milliseconds: 400),
   textStyle: TextStyle(fontSize: 16), // Optional custom text style
@@ -159,6 +161,7 @@ final customConfig = OptionsBarConfig(
 
 - `getId`: Function to extract ID from an item (required for non-String types, auto-detected for String)
 - `getLabel`: Function to extract label from an item (required for non-String types, auto-detected for String)
+- `isItemEnabled`: Function to check if an item is enabled (optional, returns `true` by default)
 
 ### Production Ready
 
