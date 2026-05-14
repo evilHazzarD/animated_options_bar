@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Option labels render on a single line with `TextOverflow.ellipsis` when space is limited, avoiding clipped or overflowing text in the bar.
 
+### Fixed
+- In equal-width tab bar mode, the selection pill no longer extends past its slot (and get clipped) when one label’s intrinsic width is larger than its share of the row but the row still fits in tab bar mode.
+
 ## [0.1.2] - 2026-01-15
 ### Added
 - Disabled items support via `isItemEnabled` callback in `AnimatedOptionsBar`
