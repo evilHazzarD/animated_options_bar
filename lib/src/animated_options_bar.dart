@@ -312,6 +312,7 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
       final textPainter = TextPainter(
         text: TextSpan(text: _getLabel(item), style: textStyle),
         textDirection: textDirection,
+        maxLines: 1,
       )..layout();
       sizes[i] = Size(
         textPainter.size.width + widget.config.textPadding.horizontal,
@@ -907,7 +908,12 @@ class _AnimatedText extends StatelessWidget {
               : config.inactiveTextColor;
         }
 
-        return Text(text, style: textStyle.copyWith(color: textColor));
+        return Text(
+          text,
+          style: textStyle.copyWith(color: textColor),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        );
       },
     );
   }
