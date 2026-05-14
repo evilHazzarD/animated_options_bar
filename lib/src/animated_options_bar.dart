@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -404,10 +406,17 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
               constraints.maxWidth - (widget.config.scrollEdgePadding * 2);
           itemWidth = availableWidth / widget.items.length;
 
+          // Measured label width can exceed the equal slot width when labels are
+          // uneven but the row still fits (tab bar mode). Centering a too-wide
+          // pill would shift it past the slot and clip at the stack edge.
+          double tabIndicatorWidth(int index) {
+            return math.min(itemSizes[index]!.width, itemWidth);
+          }
+
           double getTabPosition(int index) {
             final slotLeft =
                 widget.config.scrollEdgePadding + (index * itemWidth);
-            final indicatorWidth = itemSizes[index]!.width;
+            final indicatorWidth = tabIndicatorWidth(index);
             return slotLeft + (itemWidth - indicatorWidth) / 2;
           }
 
@@ -415,9 +424,9 @@ class _AnimatedOptionsBarState<T> extends State<AnimatedOptionsBar<T>> {
           previousPosition = previousIndex >= 0
               ? getTabPosition(previousIndex)
               : currentPosition;
-          currentWidth = itemSizes[currentIndex]!.width;
+          currentWidth = tabIndicatorWidth(currentIndex);
           previousWidth = previousIndex >= 0
-              ? itemSizes[previousIndex]!.width
+              ? tabIndicatorWidth(previousIndex)
               : currentWidth;
         } else {
           // Scrollbar mode OR tabbar mode with centering: items use natural width

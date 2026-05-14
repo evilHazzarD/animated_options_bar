@@ -237,6 +237,57 @@ void main() {
       // Should not find SingleChildScrollView for tabbar mode
       expect(find.byType(SingleChildScrollView), findsNothing);
     });
+
+    testWidgets(
+      'tabbar mode: selection pill stays within slot when one label is much wider',
+      (tester) async {
+        final narrowConfig = OptionsBarConfig(
+          textPadding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          borderRadius: 16.0,
+          itemSpacing: 8.0,
+          scrollEdgePadding: 0.0,
+          activeTextColor: Colors.orange,
+          inactiveTextColor: Colors.grey,
+          selectionColor: Colors.orange,
+          animationDuration: Duration(milliseconds: 300),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 640,
+                child: AnimatedOptionsBar<String>(
+                  items: const [
+                    'LongLongLongLongLongLongLongLabel',
+                    'X',
+                    'Y',
+                  ],
+                  selectedId: 'LongLongLongLongLongLongLongLabel',
+                  onItemSelected: (_) {},
+                  config: narrowConfig,
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.byType(SingleChildScrollView), findsNothing);
+
+        final selectionBox = tester.renderObject<RenderBox>(
+          find.descendant(
+            of: find.byType(AnimatedOptionsBar<String>),
+            matching: find.byWidgetPredicate(
+              (w) =>
+                  w is Container &&
+                  w.decoration is BoxDecoration &&
+                  (w.decoration as BoxDecoration).color == Colors.orange,
+            ),
+          ),
+        );
+        expect(selectionBox.localToGlobal(Offset.zero).dx, greaterThanOrEqualTo(-0.01));
+      },
+    );
   });
 
   group('AnimatedOptionsBar animations', () {
